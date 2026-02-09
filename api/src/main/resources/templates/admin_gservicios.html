@@ -352,7 +352,7 @@
                         id="tipoResguardo"
                         onchange="mostrarCamposResguardo(this.value)">
 
-                <option value="">-- Selecciona --</option>
+                    <option value="">-- Selecciona --</option>
                     <option value="ESCRITORIO_BASICO">Escritorio básico</option>
                     <option value="MOVIL_AVANZADO">Móvil avanzado</option>
                     <option value="ESCRITORIO_AVANZADO">Escritorio avanzado</option>
@@ -421,9 +421,17 @@
                  document.getElementById('modalTitulo').innerText='Editar';
                  document.getElementById('categoria').value=c;
 
-                 const idInput = document.getElementById('registroId');
-                 idInput.disabled = false;
-                 idInput.value = id;
+               const idInput = document.getElementById('registroId');
+
+                if (c === 'inventarios') {
+               //  inventarios NO usa id numérico
+               idInput.removeAttribute('name');
+                  idInput.value = '';
+                } else {
+              idInput.setAttribute('name', 'id');
+             idInput.value = id;
+            }
+
 
                  const form = document.querySelector('#modalCrud form');
                  form.action = '/admin/guardar';
@@ -626,42 +634,19 @@ function mostrarSelectorTipoResguardo(){
    RESGUARDOS – PASO 2: CAMPOS SEGÚN TIPO
 ===================================================== */
 function mostrarCamposResguardo(tipo){
+    let h = `<input type="hidden" name="tipoEquipo" value="${tipo}">`;
 
-    let h = `
-        <input type="hidden" name="tipoEquipo" value="${tipo}">
-
-        <input name="no" placeholder="No. de resguardo" required>
-        <input name="usuario" placeholder="Usuario" required>
-        <input name="direccion" placeholder="Dirección">
-        <input name="area" placeholder="Área / Subdirección">
-        <input name="perfilEquipo" placeholder="Perfil del equipo">
-        <input name="modelo" placeholder="Modelo">
-        <input name="serieCpu" placeholder="Serie CPU">
-        <input name="status" placeholder="Status">
-        <input name="observaciones" placeholder="Observaciones">
-    `;
-
-    // 👉 SOLO ALGUNOS TIENEN USUARIO_FINAL
-    if (
-        tipo === 'MOVIL_AVANZADO' ||
-        tipo === 'ESCRITORIO_AVANZADO'
-    ) {
+    if (tipo === 'ESCRITORIO_BASICO') {
         h += `
-            <input name="usuarioFinal" placeholder="Usuario final">
-        `;
-    }
-
-    // 👉 SOLO ESCRITORIOS TIENEN MONITOR / UPS
-    if (
-        tipo === 'ESCRITORIO_BASICO' ||
-        tipo === 'ESCRITORIO_AVANZADO'
-    ) {
-        h += `
-            <input name="modeloMonitor" placeholder="Modelo monitor">
-            <input name="serieMonitor" placeholder="Serie monitor">
-            <input name="serieUps" placeholder="Serie UPS">
-            <input name="serieTeclado" placeholder="Serie teclado">
-            <input name="serieMouse" placeholder="Serie mouse">
+            <input name="no" placeholder="No. de resguardo" required>
+            <input name="usuario" placeholder="Usuario" required>
+            <input name="direccion" placeholder="Dirección">
+            <input name="area" placeholder="Área / Subdirección">
+            <input name="perfilEquipo" placeholder="Perfil del equipo">
+            <input name="modelo" placeholder="Modelo CPU">
+            <input name="serieCpu" placeholder="Serie CPU">
+            <input name="status" placeholder="Status">
+            <input name="observaciones" placeholder="Observaciones">
         `;
     }
 
@@ -712,11 +697,7 @@ function liberarResguardo(btn){
     }).then(() => location.reload());
 }
 </script>
-<footer class="app-footer">
-    <div class="footer-inner">
-        ©2025 - Subdirección de Desarrollo Tecnológico
-    </div>
-</footer>
+
 
 </body>
 </html>

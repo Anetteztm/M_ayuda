@@ -16,20 +16,26 @@ public class LoginController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    // === Mostrar la vista del login ===
+    // ===============================
+    // MOSTRAR LOGIN (GET)
+    // ===============================
     @GetMapping("/login")
     public String mostrarLogin() {
         return "login";
     }
 
-    // === Procesar inicio de sesión ===
+    // ===============================
+    // PROCESAR LOGIN (POST)
+    // ===============================
     @PostMapping("/login")
     public String iniciarSesion(
             @RequestParam("correo") String correo,
             @RequestParam("contrasena") String contrasena,
+            @RequestParam("rol") String rolSeleccionado,
             HttpSession session,
             Model model) {
 
+        // 1. Validar credenciales
         Usuario usuario = usuarioRepository.findByCorreoAndContrasena(correo, contrasena);
 
         if (usuario == null) {
@@ -37,30 +43,58 @@ public class LoginController {
             return "login";
         }
 
-        // Guardar el usuario en sesión
+        // 2. Rol REAL desde BD
+        String rolBD = usuario.getRol().getNombre();
+
+        // 3. Normalizar roles (quita acentos, espacios, mayúsculas)
+        String rolBDNorm = normalizarRol(rolBD);
+        String rolSelNorm = normalizarRol(rolSeleccionado);
+
+        // 4. VALIDACIÓN CLAVE
+        if (!rolBDNorm.equals(rolSelNorm)) {
+            model.addAttribute("error", "El rol seleccionado no corresponde al usuario");
+            return "login";
+        }
+
+        // 5. Guardar sesión
         session.setAttribute("usuario", usuario);
+        session.setAttribute("rol", rolBDNorm);
 
-        // Obtener el nombre del rol desde la entidad Rol
-        String rol = usuario.getRol().getNombre();
+        // 6. Redirección segura
+        if (rolBDNorm.equals("ADMINISTRADOR")) {
+            return "redirect:/admin/menu";
+        }
 
-        // Redirigir según el tipo de usuario
-        if (rol.equalsIgnoreCase("ADMINISTRADOR")) {
-            return "redirect:/admin/menu";   // ✅ URL correcta
-        } else if (rol.equalsIgnoreCase("TECNICO")) {
+        if (rolBDNorm.equals("TECNICO")) {
             return "redirect:/tecnico/menu?idTecnico=" + usuario.getIdUsuario();
         }
 
-
-        // Si no tiene rol válido, regresar al login
+        // Respaldo
         model.addAttribute("error", "Rol no autorizado");
         session.invalidate();
         return "login";
     }
 
-    // === Cerrar sesión ===
+    // ===============================
+    // CERRAR SESIÓN
+    // ===============================
     @GetMapping("/logout")
     public String cerrarSesion(HttpSession session) {
-        session.invalidate(); // elimina los datos de sesión
-        return "redirect:/login"; // redirige al login
+        session.invalidate();
+        return "redirect:/login";
+    }
+
+    // ===============================
+    // MÉTODO DE NORMALIZACIÓN
+    // ===============================
+    private String normalizarRol(String rol) {
+        return rol
+                .toUpperCase()
+                .replace("Á", "A")
+                .replace("É", "E")
+                .replace("Í", "I")
+                .replace("Ó", "O")
+                .replace("Ú", "U")
+                .trim();
     }
 }
